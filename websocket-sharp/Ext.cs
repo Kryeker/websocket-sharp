@@ -217,7 +217,7 @@ namespace WebSocketSharp
       return method == CompressionMethod.Deflate ? stream.compress () : stream;
     }
 
-    internal static bool Contains (this string value, params char[] anyOf)
+    public static bool Contains (this string value, params char[] anyOf)
     {
       return anyOf != null && anyOf.Length > 0
              ? value.IndexOfAny (anyOf) > -1
@@ -252,7 +252,7 @@ namespace WebSocketSharp
       return false;
     }
 
-    internal static bool Contains<T> (
+    public static bool Contains<T> (
       this IEnumerable<T> source,
       Func<T, bool> condition
     )
@@ -1049,7 +1049,7 @@ namespace WebSocketSharp
       }
     }
 
-    internal static List<TSource> ToList<TSource> (
+    public static List<TSource> ToList<TSource> (
       this IEnumerable<TSource> source
     )
     {

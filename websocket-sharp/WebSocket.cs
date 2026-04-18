@@ -97,7 +97,7 @@ namespace WebSocketSharp
     private bool                           _inContinuation;
     private volatile bool                  _inMessage;
     private volatile Logger                _log;
-    private static readonly int            _maxRetryCountForConnect;
+    public int                             _maxRetryCountForConnect = 10;
     private Action<MessageEventArgs>       _message;
     private Queue<MessageEventArgs>        _messageEventQueue;
     private uint                           _nonceCount;
@@ -111,7 +111,7 @@ namespace WebSocketSharp
     private Uri                            _proxyUri;
     private volatile WebSocketState        _readyState;
     private ManualResetEvent               _receivingExited;
-    private int                            _retryCountForConnect;
+    public int                             _retryCountForConnect;
     private bool                           _secure;
     private ClientSslConfiguration         _sslConfig;
     private Stream                         _stream;
@@ -120,6 +120,7 @@ namespace WebSocketSharp
     private const string                   _version = "13";
     private TimeSpan                       _waitTime;
 
+    private TimeSpan _tcpTimeout;
     #endregion
 
     #region Internal Fields
@@ -156,7 +157,6 @@ namespace WebSocketSharp
 
     static WebSocket ()
     {
-      _maxRetryCountForConnect = 10;
       EmptyBytes = new byte[0];
       FragmentLength = 1016;
       RandomNumber = new RNGCryptoServiceProvider ();
@@ -178,7 +178,7 @@ namespace WebSocketSharp
       _secure = context.IsSecureConnection;
       _stream = context.Stream;
       _waitTime = TimeSpan.FromSeconds (1);
-
+      _tcpTimeout = TimeSpan.FromSeconds(30);
       init ();
     }
 
@@ -194,7 +194,7 @@ namespace WebSocketSharp
       _secure = context.IsSecureConnection;
       _stream = context.Stream;
       _waitTime = TimeSpan.FromSeconds (1);
-
+      _tcpTimeout = TimeSpan.FromSeconds(30);
       init ();
     }
 
@@ -281,7 +281,7 @@ namespace WebSocketSharp
       _retryCountForConnect = -1;
       _secure = _uri.Scheme == "wss";
       _waitTime = TimeSpan.FromSeconds (5);
-
+      _tcpTimeout = TimeSpan.FromSeconds(30);
       init ();
     }
 
@@ -750,6 +750,25 @@ namespace WebSocketSharp
 
           _waitTime = value;
         }
+      }
+    }
+    /// <summary>
+    /// Gets or sets the timout for connecting using new <see cref="TcpClient"/>
+    /// </summary>
+    /// <value>
+    /// A <see cref="TimeSpan"/> that represents the timeout. The default value is the same as
+    /// 30 seconds.
+    /// </value>
+    public TimeSpan TcpTimeout
+    {
+      get
+      {
+        return _tcpTimeout;
+      }
+
+      set
+      {
+        _tcpTimeout = value;
       }
     }
 
@@ -2256,7 +2275,7 @@ namespace WebSocketSharp
         if (res.CloseConnection) {
           releaseClientResources ();
 
-          _tcpClient = new TcpClient (_proxyUri.DnsSafeHost, _proxyUri.Port);
+          _tcpClient = tcpClientWithTimeout(_proxyUri.DnsSafeHost, _proxyUri.Port);
           _stream = _tcpClient.GetStream ();
         }
 
@@ -2271,7 +2290,7 @@ namespace WebSocketSharp
     private void setClientStream ()
     {
       if (_proxyUri != null) {
-        _tcpClient = new TcpClient (_proxyUri.DnsSafeHost, _proxyUri.Port);
+        _tcpClient = tcpClientWithTimeout(_proxyUri.DnsSafeHost, _proxyUri.Port);
         _stream = _tcpClient.GetStream ();
 
         var res = sendProxyConnectRequest ();
@@ -2282,7 +2301,7 @@ namespace WebSocketSharp
           throw new WebSocketException (msg);
       }
       else {
-        _tcpClient = new TcpClient (_uri.DnsSafeHost, _uri.Port);
+        _tcpClient = tcpClientWithTimeout(_uri.DnsSafeHost, _uri.Port);
         _stream = _tcpClient.GetStream ();
       }
 
@@ -2322,50 +2341,67 @@ namespace WebSocketSharp
         }
       }
     }
+        // As client
+        private TcpClient tcpClientWithTimeout(string hostname, int port)
+        {
+            TcpClient client = new TcpClient();
+            client.NoDelay = true;
+            var result = client.BeginConnect(hostname, port, null, null);
+            var success = result.AsyncWaitHandle.WaitOne(_tcpTimeout);
+            if (!success)
+            {
+                throw new WebSocketException("The connection timed out");
+            }
+            client.EndConnect(result);
+            return client;
+        }
 
-    private void startReceiving ()
+        private void startReceiving()
     {
       if (_messageEventQueue.Count > 0)
-        _messageEventQueue.Clear ();
+                _messageEventQueue.Clear();
 
-      _pongReceived = new ManualResetEvent (false);
-      _receivingExited = new ManualResetEvent (false);
+            _pongReceived = new ManualResetEvent(false);
+            _receivingExited = new ManualResetEvent(false);
 
       Action receive = null;
       receive =
         () =>
-          WebSocketFrame.ReadFrameAsync (
+                WebSocketFrame.ReadFrameAsync(
             _stream,
             false,
-            frame => {
-              var cont = processReceivedFrame (frame)
+                  frame =>
+                  {
+                      var cont = processReceivedFrame(frame)
                          && _readyState != WebSocketState.Closed;
 
-              if (!cont) {
+                      if (!cont)
+                      {
                 var exited = _receivingExited;
 
                 if (exited != null)
-                  exited.Set ();
+                              exited.Set();
 
                 return;
               }
 
-              receive ();
+                      receive();
 
               if (_inMessage)
                 return;
 
-              message ();
+                      message();
             },
-            ex => {
-              _log.Fatal (ex.Message);
-              _log.Debug (ex.ToString ());
+                  ex =>
+                  {
+                      _log.Fatal(ex.Message);
+                      _log.Debug(ex.ToString());
 
-              abort ("An exception has occurred while receiving.", ex);
+                      abort("An exception has occurred while receiving.", ex);
             }
           );
 
-      receive ();
+            receive();
     }
 
     // As client

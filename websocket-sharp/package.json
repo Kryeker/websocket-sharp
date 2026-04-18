@@ -1,0 +1,6 @@
+{
+    "name": "com.sta.websocket-sharp",
+    "displayName": "websocket-sharp",
+    "version": "1.0.2",
+    "description": "A C# implementation of the WebSocket protocol client and server."
+}

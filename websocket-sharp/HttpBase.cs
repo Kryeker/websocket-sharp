@@ -154,6 +154,10 @@ namespace WebSocketSharp
       var enc = contentType != null && contentType.Length > 0
                 ? HttpUtility.GetEncoding (contentType)
                 : Encoding.UTF8;
+            if (enc == null)
+            {
+                enc = Encoding.UTF8;
+            }
 
       return enc.GetString (_messageBodyData);
     }

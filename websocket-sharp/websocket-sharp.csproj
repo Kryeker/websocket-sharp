@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -30,6 +31,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_Ubuntu|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,6 +42,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_Ubuntu|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -54,6 +57,7 @@
         <Command type="AfterBuild" command="doc/doc.sh" workingdir="doc/" externalConsole="True" />
       </CustomCommands>
     </CustomCommands>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -61,7 +65,6 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Ext.cs" />
     <Compile Include="MessageEventArgs.cs" />
     <Compile Include="CloseEventArgs.cs" />
@@ -140,9 +143,5 @@
     <Compile Include="Server\WebSocketServiceHost`1.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Server\" />
-    <Folder Include="Net\" />
-    <Folder Include="Net\WebSockets\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>
